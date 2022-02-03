@@ -143,7 +143,7 @@ def profile_follow(request, username):
     author = get_object_or_404(User, username=username)
     follow = Follow.objects.filter(
         user=request.user,
-            author=author
+        author=author
     )
     if author != request.user:
         if not follow:
