@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
-from ..models import Comment, Group, Post
+from ..models import Comment, Group, Post, POST_LENGHT
 
 User = get_user_model()
 
@@ -28,7 +28,7 @@ class PostModelTest(TestCase):
 
     def test_models_have_correct_object_names(self):
         """Проверяем, что у моделей корректно работает __str__."""
-        expected_post_str = PostModelTest.post.text[:15]
+        expected_post_str = PostModelTest.post.text[:POST_LENGHT]
         expected_group_str = PostModelTest.group.title
         expected_comment_str = PostModelTest.comment.text
         self.assertEqual(expected_post_str, str(PostModelTest.post))

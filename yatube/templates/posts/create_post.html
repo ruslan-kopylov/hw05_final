@@ -25,7 +25,7 @@
               </label>
               {{ form.text }}                
               <small id="id_text-help" class="form-text text-muted">
-                {% if post %}{{ form.text.help_text.edit }}{% else %}{{ form.text.help_text.creat }}{% endif %}
+                {% if post %}{{ form.text.help_text.edit }}{% else %}{{ form.text.help_text.create }}{% endif %}
               </small>                  
             </div>            
             <div class="form-group row my-3 p-3">
@@ -35,7 +35,7 @@
               {{ form.group }}
               <small id="id_group-help" class="form-text text-muted">
                 {% if post %}{{ form.group.help_text.edit }}
-                {% else %}{{ form.group.help_text.creat }}
+                {% else %}{{ form.group.help_text.create }}
                 {% endif %}
               </small>
             </div>

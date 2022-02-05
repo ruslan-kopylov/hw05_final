@@ -5,7 +5,7 @@
   {{ title }}
 {%endblock%}
 {%block content%}
-{% include 'posts/includes/switcher.html' %}
+{% include 'includes/switcher.html' %}
   <div class="container py-5">     
     <h3>Последние обновления у авторов</h3>
     <article>
@@ -39,7 +39,7 @@
             <hr>
           {% endif %}
         {% endfor %}
-      {% include 'posts/includes/paginator.html' %} 
+      {% include 'includes/paginator.html' %} 
     </article>
   </div>
 {%endblock%}

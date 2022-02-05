@@ -4,8 +4,6 @@ from django.core.paginator import Paginator
 from .forms import CommentForm, PostForm
 from .models import Group, Post, User, Follow
 
-TITLE_INDEX = 'Это главная страница проекта Yatube'
-TITLE_GROUP_LIST = 'Здесь будет информация о группах проекта Yatube'
 POSTS_PER_PAGE = 10
 
 
@@ -17,7 +15,6 @@ def index(request):
     context = {
         'page_number': page_number,
         'page_obj': page_obj,
-        'title': TITLE_INDEX
     }
     return render(request, 'posts/index.html', context)
 
@@ -32,7 +29,6 @@ def group_post(request, slug):
     context = {
         'group': group,
         'page_obj': page_obj,
-        'title': TITLE_GROUP_LIST
     }
     return render(request, template, context)
 
@@ -44,7 +40,7 @@ def profile(request, username):
         if Follow.objects.filter(
             user=request.user,
             author=name
-        ):
+        ).exists():
             following = True
     posts = name.posts.all()
     posts_count = posts.count()
@@ -79,7 +75,7 @@ def post_detail(request, post_id):
 @login_required
 def post_create(request):
     form = PostForm(request.POST or None)
-    if request.method != 'POST' or form.is_valid() is False:
+    if request.method != 'POST' or not form.is_valid():
         return render(request, 'posts/create_post.html', {'form': form})
     post = form.save(commit=False)
     post.author = request.user

@@ -163,35 +163,29 @@ class PostsViewsTests(TestCase):
         сформированы с правильным контекстом.
         """
         group_slug = PostsViewsTests.group.slug
-        username = PostsViewsTests.user.get_full_name()
         responses = [
             (
                 'posts:index',
                 None,
-                'Это главная страница проекта Yatube'
             ),
             (
                 'posts:profile',
                 (PostsViewsTests.user,),
-                f'Профайл пользователя {username}'
             ),
             (
                 'posts:group_post',
                 (group_slug,),
-                'Здесь будет информация о группах проекта Yatube'
             )
         ]
-        for resp, args, title in responses:
+        for resp, args in responses:
             with self.subTest(resp=resp):
                 response = self.post_author.get(reverse(resp, args=args))
                 post_on_page = response.context['page_obj'][0]
-                page_title = response.context['title']
                 post_text = post_on_page.text
                 post_group = post_on_page.group.title
                 post_author = post_on_page.author.username
                 post_image = post_on_page.image.name
                 values = {
-                    page_title: title,
                     post_text: 'Тестовый пост',
                     post_group: 'Тестовая группа',
                     post_author: 'author',
