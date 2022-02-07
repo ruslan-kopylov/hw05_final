@@ -1,12 +1,13 @@
 import shutil
 import tempfile
-from django.contrib.auth import get_user_model
+from django import forms
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
-from django import forms
+from http import HTTPStatus
 from ..models import Post, Group, Follow
 from ..views import POSTS_PER_PAGE
 
@@ -75,48 +76,86 @@ class PostsViewsTests(TestCase):
     def test_authorized_user_following(self):
         """
         Авторизованный пользователь может подписываться
-        на других пользователей и удалять их из подписок.
+        на других пользователей
         """
-        self.reader.get(
+        self.following.delete()
+        num_of_followers = Follow.objects.filter(
+            author=self.user
+        ).count()
+        response = self.reader.get(
             reverse(
                 'posts:profile_follow',
                 args=(self.user.username,)
             )
         )
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
         self.assertTrue(
             Follow.objects.filter(
                 user=self.follower,
                 author=self.user
             ).exists()
         )
-        self.reader.get(
+        new_num_of_followers = Follow.objects.filter(
+            author=self.user
+        ).count()
+        self.assertEqual(num_of_followers + 1, new_num_of_followers)
+
+    def test_authorized_user_unfollowing(self):
+        """
+        Авторизованный пользователь может удалять
+        других пользователей из подписок
+        """
+        num_of_followers = Follow.objects.filter(
+            author=self.user
+        ).count()
+        response = self.reader.get(
             reverse(
                 'posts:profile_unfollow',
                 args=(self.user.username,)
             )
         )
+        new_num_of_followers = Follow.objects.filter(
+            author=self.user
+        ).count()
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
         self.assertFalse(
             Follow.objects.filter(
                 user=self.follower,
                 author=self.user
             ).exists()
         )
+        self.assertEqual(num_of_followers - 1, new_num_of_followers)
 
     def test_new_post_for_followers(self):
         """
         Новая запись пользователя появляется в ленте тех,
-        кто на него подписан и не появляется в ленте тех,
-        кто не подписан.
+        кто на него подписан.
         """
+        new_post = Post.objects.create(
+            author=self.user,
+            text='Новый пост'
+        )
         response = self.reader.get(reverse('posts:follow_index'))
+        self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertIn(
-            self.post,
+            new_post,
             response.context['page_obj']
         )
+
+    def test_new_post_for_not_followers(self):
+        """
+        Новая запись пользователя не появляется в ленте тех,
+        кто на него не подписан.
+        """
         self.following.delete()
+        new_post = Post.objects.create(
+            author=self.user,
+            text='Новый пост'
+        )
         response = self.reader.get(reverse('posts:follow_index'))
+        self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertNotIn(
-            self.post,
+            new_post,
             response.context['page_obj']
         )
 
@@ -127,13 +166,16 @@ class PostsViewsTests(TestCase):
             text='Тестирую кеш'
         )
         response = self.post_author.get(reverse('posts:index'))
+        self.assertEqual(response.status_code, HTTPStatus.OK)
         old_content = response.content
         self.assertEqual(response.context['page_obj'][0].text, 'Тестирую кеш')
         Post.objects.first().delete()
         response = self.post_author.get(reverse('posts:index'))
+        self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertEqual(response.content, old_content)
         cache.clear()
         response = self.post_author.get(reverse('posts:index'))
+        self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertNotEqual(
             response.content,
             old_content
@@ -155,6 +197,7 @@ class PostsViewsTests(TestCase):
         for template, adress, args in templates:
             with self.subTest(adress=adress):
                 response = self.post_author.get(reverse(adress, args=args))
+                self.assertEqual(response.status_code, HTTPStatus.OK)
                 self.assertTemplateUsed(response, template)
 
     def test_templates_show_correct_context(self):
@@ -180,6 +223,7 @@ class PostsViewsTests(TestCase):
         for resp, args in responses:
             with self.subTest(resp=resp):
                 response = self.post_author.get(reverse(resp, args=args))
+                self.assertEqual(response.status_code, HTTPStatus.OK)
                 post_on_page = response.context['page_obj'][0]
                 post_text = post_on_page.text
                 post_group = post_on_page.group.title
@@ -203,6 +247,7 @@ class PostsViewsTests(TestCase):
             kwargs={'post_id': post_id}
         )
         )
+        self.assertEqual(response.status_code, HTTPStatus.OK)
         values = {
             'post': PostsViewsTests.post,
             'posts_count': PostsViewsTests.post.author.posts.all().count()
@@ -218,6 +263,7 @@ class PostsViewsTests(TestCase):
     def test_template_create_post_correct_context(self):
         """Шаблон create post сформирован с правильным контекстом."""
         response = self.post_author.get(reverse('posts:post_create'))
+        self.assertEqual(response.status_code, HTTPStatus.OK)
         form_fields = {
             'text': forms.fields.CharField,
             'group': forms.fields.ChoiceField
@@ -235,6 +281,7 @@ class PostsViewsTests(TestCase):
             kwargs={'post_id': post_id}
         )
         )
+        self.assertEqual(response.status_code, HTTPStatus.OK)
         form_fields = {
             'text': forms.fields.CharField,
             'group': forms.fields.ChoiceField
@@ -261,6 +308,7 @@ class PostsViewsTests(TestCase):
         for address, args, result in addresses:
             with self.subTest(address=address):
                 response = self.post_author.get(reverse(address, args=args))
+                self.assertEqual(response.status_code, HTTPStatus.OK)
                 self.assertEqual(
                     PostsViewsTests.post in response.context['page_obj'],
                     result)
@@ -290,6 +338,7 @@ class PaginatorViewsTest(TestCase):
     def test_first_page_contains_ten_records(self):
         """Проверка: количество постов на первой странице равно 10"""
         response = self.post_author.get(reverse('posts:index'))
+        self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertEqual(len(response.context['page_obj']), POSTS_PER_PAGE)
 
     def test_second_pages_contains_five_records(self):
@@ -298,6 +347,7 @@ class PaginatorViewsTest(TestCase):
         username = PaginatorViewsTest.user
         number_of_posts = NUMBER_OF_POSTS_COPIES - POSTS_PER_PAGE
         response = self.post_author.get(reverse('posts:index') + '?page=2')
+        self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertEqual(len(response.context['page_obj']), number_of_posts)
         values = [
             reverse('posts:index'),
@@ -313,6 +363,7 @@ class PaginatorViewsTest(TestCase):
         for value in values:
             with self.subTest(value=value):
                 response = self.post_author.get(value + '?page=2')
+                self.assertEqual(response.status_code, HTTPStatus.OK)
                 self.assertEqual(len(
                     response.context['page_obj']),
                     number_of_posts)

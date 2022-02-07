@@ -10,7 +10,7 @@
     </h1>
     <p>{{ group.description }}</p>
     {% for post in page_obj %}
-      {% include 'includes/card.html' %}
+      {% include 'includes/card.html' with post=post %}
       {% if not forloop.last %}
         <hr>
       {% endif %}

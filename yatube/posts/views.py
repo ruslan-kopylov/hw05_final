@@ -34,25 +34,24 @@ def group_post(request, slug):
 
 
 def profile(request, username):
-    name = get_object_or_404(User, username=username)
+    author = get_object_or_404(User, username=username)
     following = False
     if request.user.is_authenticated:
-        if Follow.objects.filter(
+        following = Follow.objects.filter(
             user=request.user,
-            author=name
-        ).exists():
-            following = True
-    posts = name.posts.all()
+            author=author
+        ).exists()
+    posts = author.posts.all()
     posts_count = posts.count()
     paginator = Paginator(posts, POSTS_PER_PAGE)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    title = f'Профайл пользователя {name.get_full_name()}'
+    title = f'Профайл пользователя {author.get_full_name()}'
     context = {
         'following': following,
         'title': title,
         'posts_count': posts_count,
-        'name': name,
+        'name': author,
         'page_obj': page_obj,
     }
     return render(request, 'posts/profile.html', context)
@@ -137,26 +136,20 @@ def follow_index(request):
 @login_required
 def profile_follow(request, username):
     author = get_object_or_404(User, username=username)
-    follow = Follow.objects.filter(
+    if author == request.user:
+        return redirect('posts:profile', username)
+    Follow.objects.get_or_create(
         user=request.user,
         author=author
     )
-    if author != request.user:
-        if not follow:
-            Follow.objects.create(
-                user=request.user,
-                author=author
-            )
     return redirect('posts:profile', username)
 
 
 @login_required
 def profile_unfollow(request, username):
     author = get_object_or_404(User, username=username)
-    request.user
-    unfollowing = Follow.objects.filter(
+    Follow.objects.filter(
         user=request.user,
         author=author
-    )
-    unfollowing.delete()
+    ).delete()
     return redirect('posts:profile', username)
