@@ -1,29 +1,27 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}Технологии{% endblock %}
 {% block content %}
-{% comment %} Колонки с отступом сверху и снизу {% endcomment %}
 <div class="row">
-  <h1>Вот что я умею</h1>
-  {% comment %}
-    Боковой блок со списком технологий 
-    Займет всю ширину блока на мобильном
-    и 25% при размерах экрана ≥768px
-  {% endcomment %}
+  <div class="container py-5" style="text-align:center">
+    <h1 style="text-align:center">Что использовалось в этом проекте</h1>
+  </div>
   <aside class="col-12 col-md-3">
     <ul class="list-group list-group-flush">
       <li class="list-group-item">
-        Python
+        <img src="{%static 'img/python_icon.jpeg' %}" width= "100" style="margin-right: 80px">
+              Python 3.8
       </li>
       <li class="list-group-item">
-        Django
+        <img src="{%static 'img/django_icon.jpeg' %}" width = "100" style="margin-right: 80px">
+        Django 2.2.16
+      </li>
+      <li class="list-group-item">
+        <img src="{%static 'img/bootstrap_icon.png' %}" width = "100" style="margin-right: 80px">
+        Bootstrap
       </li>
     </ul>
   </aside>
-  {% comment %}
-    Статья  
-    Займет всю ширину блока на мобильном
-    и 75% при размерах экрана ≥768px
-  {% endcomment %}
   <article class="col-12 col-md-9">
     <p>Текст страницы "Технологии"</p>
   </article>
